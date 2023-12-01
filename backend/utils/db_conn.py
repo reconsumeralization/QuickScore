@@ -41,8 +41,7 @@ class DBConn:
 
     def get_db(self):
         try:
-            db = self.session_local()
-            return db
+            return self.session_local()
         except Exception as error:
             raise DatabaseError("Error while connecting to database!!") from error
 

@@ -13,7 +13,7 @@ def render_page(data):
                 
                 """
     st.markdown(mark_down, unsafe_allow_html=True)
-        
+
     # Store LLM generated responses
     if "messages" not in st.session_state.keys():
         st.session_state.messages = [{"role": "assistant", "message": "Ask me about this evaluation?"}]
@@ -29,7 +29,7 @@ def render_page(data):
         headers = {
             "accept": "application/json",
             "content-type": "application/json",
-            "Authorization": f"Bearer ivWV8ybExfUclVP8Nj8X71jziG0YTYFjHlR8CjJs"
+            "Authorization": "Bearer ivWV8ybExfUclVP8Nj8X71jziG0YTYFjHlR8CjJs",
         }
         context_message = f"""
             User's Question: {message}
@@ -65,7 +65,7 @@ def render_page(data):
 
 def build_documents(data):
     json_docs = data["evaluation_details"]
-    
+
     snippet = ""
     for i in range(len(json_docs)):
         current_set = json_docs[i]
@@ -85,12 +85,8 @@ def build_documents(data):
         snippet+=text
     snippet = f"""Total Marks given for the evaluation: {data["score"]}
     
-    """ + snippet
-    
-    documents = [{
-        "title": "Evaluation Details",
-        "snippet": snippet
-    }]
-    return documents
+    {snippet}"""
+
+    return [{"title": "Evaluation Details", "snippet": snippet}]
         
     

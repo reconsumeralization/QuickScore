@@ -27,14 +27,11 @@ async def create_answer(file: UploadFile = File(...), answer_data: str = Form(..
         # Here's a simple example using pdfplumber:
 
         with pdfplumber.open(io.BytesIO(pdf_data)) as pdf:
-            answer_pdf = ""
-            for page in pdf.pages:
-                answer_pdf += page.extract_text()
-    
+            answer_pdf = "".join(page.extract_text() for page in pdf.pages)
     except Exception as error:
         print(error)
         return JSONResponse(content='{"message": "Some Exception has occurred!!"}', status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+
     # Parse the JSON data
     try:
         parsed_answer_data = json.loads(answer_data)
@@ -48,7 +45,7 @@ async def create_answer(file: UploadFile = File(...), answer_data: str = Form(..
     except ValidationError as e:
         print(e)
         return JSONResponse(content='{"message": "Invalid JSON data!!"}', status_code=status.HTTP_400_BAD_REQUEST)
-                
+
     answer_core = AnswerCore()
     try:
         answer = answer_core.create_answer(validated_answer_data, answer_pdf, filename=filename)

@@ -15,7 +15,7 @@ class ExamCore:
 
     # Create a new user
     def create_exam(self, input: ExamResponse, filename:str, answer_key: str = ""):
-        if answer_key == "":
+        if not answer_key:
             raise BadRequestError("Could not parse the pdf")
 
         qs = QuestionSplitter()
@@ -30,8 +30,7 @@ class ExamCore:
         if exam is None:
             raise NotFoundError("Exam doesnot exist!")
         exam_obj = exam[0]
-        exam_res = ExamResponse.model_validate(exam_obj).model_dump(mode="json")
-        return exam_res
+        return ExamResponse.model_validate(exam_obj).model_dump(mode="json")
 
     # Retrieve a user by email
     def get_exams_by_user_id(self, user_id: int):

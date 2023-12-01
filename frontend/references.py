@@ -29,10 +29,8 @@ def create_references():
                 name = st.text_input('Name', key='name')
                 comments = st.text_area('Comments', key='comments')
                 uploaded_file = st.file_uploader('Upload File', accept_multiple_files=False, key='ref_file_uploader')
-                
-                # Submit button for the form
-                submitted = st.form_submit_button('Submit')
-                if submitted:
+
+                if submitted := st.form_submit_button('Submit'):
                     # Call the function to add a reference with name, comments, and file name
                     add_reference(name, comments, uploaded_file)
                     st.session_state['is_expanded'] = False
@@ -71,9 +69,9 @@ def populate_references_table():
         reference_result = reference_core.get_contexts_by_user_id(user_id)
     except Exception as error:
         st.error("Could not populate references!")
-        
-    modified_references = []
+
     if len(reference_result) > 0:
+        modified_references = []
         for key, reference in enumerate(reference_result):
             print(reference)
             item = {

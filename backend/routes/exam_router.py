@@ -29,14 +29,11 @@ async def create_new_exam(file: UploadFile = File(...), exam: str = Form(...)):
         # Here's a simple example using pdfplumber:
 
         with pdfplumber.open(io.BytesIO(pdf_data)) as pdf:
-            pdf_text = ""
-            for page in pdf.pages:
-                pdf_text += page.extract_text()
-
+            pdf_text = "".join(page.extract_text() for page in pdf.pages)
     except Exception as error:
         print(error)
         return JSONResponse(content='{"message": "Some Exception has occurred!!"}', status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    
+
     # Parse the JSON data
     try:
         parsed_exam = json.loads(exam)
