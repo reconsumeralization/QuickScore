@@ -13,9 +13,7 @@ def make_hashes(password):
 def check_hashes(password, hashed_text):
     # commenting this line for the time being
     # if make_hashes(password) == hashed_text:
-    if password == hashed_text:
-        return hashed_text
-    return False
+    return hashed_text if password == hashed_text else False
 
 # # Database mockup
 user_data = {
@@ -94,9 +92,8 @@ def perform_backend_login(email, password):
     response = requests.post(url, data=data)
     if response.status_code == 200:
         return response.json()
-    else:
-        st.error(f"Error login: {response.status_code}")
-        return None
+    st.error(f"Error login: {response.status_code}")
+    return None
     
 def perform_backend_create_user(name, email, password):
     url = "http://localhost:8000/quick-score/users"
@@ -105,9 +102,8 @@ def perform_backend_create_user(name, email, password):
     response = requests.post(url, json=data)
     if response.status_code == 200:
         return response.json()
-    else:
-        st.error("Could not create user!!")
-        return None
+    st.error("Could not create user!!")
+    return None
 
 # def main():    
 #     if 'page' not in st.session_state:

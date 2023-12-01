@@ -9,11 +9,7 @@ class GoogleDrive:
         )
         project_id = "quickscore-405104"
         client_secret = "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"
-        private_key = (
-            "-----BEGIN PRIVATE KEY-----\n{}\n-----END PRIVATE KEY-----\n".format(
-                client_secret
-            )
-        )
+        private_key = f"-----BEGIN PRIVATE KEY-----\n{client_secret}\n-----END PRIVATE KEY-----\n"
         credentials = {
             "type": "service_account",
             "project_id": "quickscore-405104",
@@ -35,14 +31,13 @@ class GoogleDrive:
     def get_files(self):
         service = build("drive", "v3", credentials=self.creds)
         results = service.files().list().execute()
-        files = results.get("files", [])
-
-        if not files:
-            print("No files found.")
-        else:
+        if files := results.get("files", []):
             print("Files:")
             for file in files:
                 print(f"{file['name']} ({file['id']})")
+
+        else:
+            print("No files found.")
 
 
 gd = GoogleDrive()

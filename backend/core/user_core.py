@@ -54,9 +54,8 @@ class UserCore:
             raise AuthenticationError("Error in email or password!")
         secret_key = config.SECRET_KEY
         user = user.__dict__
-        payload = {
+        return {
             "user_id": user["id"],
             "email": user["email"],
-            "name": user["name"]
+            "name": user["name"],
         }
-        return payload

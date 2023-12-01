@@ -32,17 +32,13 @@ def create_students():
                 name = st.text_input('Name', key='name')
                 email = st.text_input('Email', key='email')
                 roll_number = st.text_input('Roll Number', key='roll_number')
-                # Submit button for the form
-                submitted = st.form_submit_button('Submit')
-                if submitted:
+                if submitted := st.form_submit_button('Submit'):
                     # Call the function to add a student
                     add_student(st.session_state.name, st.session_state.email, st.session_state.roll_number)
                     st.session_state.show_overlay = False
                     st.session_state.pop('name', None)
                     st.session_state.pop('email', None)
                     st.session_state.pop('roll_number', None)
-                    # st.experimental_rerun()
-
     # Display the table of student details with 'View', 'Edit', and 'Delete' buttons
     if st.session_state.student_details:
         st.markdown("<br>", unsafe_allow_html=True)
@@ -83,10 +79,10 @@ def populate_students_table():
         print(error)
         st.error("Cannot Populate the student details!")
         student_result = []
-        
 
-    modified_students = []
-    if len(student_result) > 0:
+
+    if student_result:
+        modified_students = []
         for key, student in enumerate(student_result):
             item = {
                         'S.No': key + 1,
@@ -117,12 +113,12 @@ def add_student(name, email, roll_number):
         'roll_no': roll_number,
         'user_id': st.session_state.user_id
     }
-    
+
     try:
         student_core = StudentCore()
         student_core.create_student(student_data)
     except Exception as error:
         print(error)
-        st.error(f"Failed to add student")
+        st.error("Failed to add student")
     st.experimental_rerun()
         

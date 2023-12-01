@@ -29,7 +29,7 @@ class QuestionSplitter:
              {text}
             ```
             """
-            
+
         response = self.co.generate(
             model='command',
             prompt=prompt,
@@ -39,30 +39,26 @@ class QuestionSplitter:
             stop_sequences=[],
             return_likelihoods='NONE'
         )
-        
+
         extracted_response = response.generations[0].text
 
 
-        matches = re.findall(r'```json([\s\S]+?)```',extracted_response)
-
-        if matches:
+        if matches := re.findall(r'```json([\s\S]+?)```', extracted_response):
             extracted_content = matches[0].strip()
             pre_json = extracted_content
-            json_data = json.loads(pre_json)
-            return json_data
+            return json.loads(pre_json)
         else:
             try:
-                json_data = json.loads(extracted_response)
-                return json_data
+                return json.loads(extracted_response)
             except Exception as error:
                 print(error)
                 raise ModelError("Error in Parsing Json")
-                
+
             raise ModelError("Error in Parsing Json")
         
-    def replace_double_quotes_with_single_quotes(input_string):
-        return input_string.replace('"', "'")
+    def replace_double_quotes_with_single_quotes(self):
+        return self.replace('"', "'")
     
-    def replace_single_quotes_with_single_quotes(input_string):
-        return input_string.replace('"', "'")
+    def replace_single_quotes_with_single_quotes(self):
+        return self.replace('"', "'")
 

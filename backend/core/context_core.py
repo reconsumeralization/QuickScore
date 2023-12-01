@@ -18,7 +18,7 @@ class ContextCore:
         if context_pdf is None:
             raise BadRequestError("Could not parse the pdf")
         uuid_str = str(uuid.uuid4()).replace('-', '')
-        context_unique_key = "CONTEXT"+uuid_str[0].upper() + uuid_str[1:]
+        context_unique_key = f"CONTEXT{uuid_str[0].upper()}{uuid_str[1:]}"
         print(context_unique_key)
         vector_db = VectorDB()
         result = vector_db.embed_and_store(context_pdf, context_unique_key)

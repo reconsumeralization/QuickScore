@@ -18,9 +18,9 @@ STUDENTS_LIST = ["No students to display"]
 def create_evaluations():
     st.session_state.evaluation_details = populate_evaluation_table()
     render_side_bar()
-    
+
     st.title("Evaluations")
-    
+
     if 'evaluation_details' not in st.session_state:
         st.session_state.evaluation_details = []
 
@@ -50,7 +50,7 @@ def create_evaluations():
                     add_evaluation(json_data, uploaded_file)
                     st.session_state.show_overlay = False
                     st.experimental_rerun()
-        
+
 
     #Display the table of exam details
     if st.session_state.evaluation_details:
@@ -66,21 +66,17 @@ def create_evaluations():
         # Iterate over the DataFrame to display the table with buttons
         for i, row in df.iterrows():
             cols = st.columns((1, 1, 1, 1, 1, 1, 0.5, 0.5))
-            cols[0].write(str(i + 1)) 
+            cols[0].write(str(i + 1))
             cols[1].write(row['Name'])
             cols[2].write(row['Roll No'])
             cols[3].write(str(row['Score']))
             cols[4].write(row['Status'])
             cols[5].write(row['File Name'])
 
-            # View button (implement functionality as needed)
-            view_button = cols[6].button('👁️', key=f"view_{i}")
-            if view_button:
+            if view_button := cols[6].button('👁️', key=f"view_{i}"):
                 view_evaluation(row['id'])
 
-            # Delete button
-            delete_button = cols[7].button('🗑️', key=f"delete_{i}")
-            if delete_button:
+            if delete_button := cols[7].button('🗑️', key=f"delete_{i}"):
                 remove_evaluation(row['id'])
                 del st.session_state.evaluation_details[i]
                 st.experimental_rerun()
@@ -88,13 +84,13 @@ def create_evaluations():
 def populate_evaluation_table():
     
     exam_id = st.session_state.exam_id
-    
+
     answer_core = AnswerCore()
     answer_result = answer_core.get_answers_by_exam_id(exam_id)
-    
-    modified_answers = []
+
     if len(answer_result) > 0:
         print("answer_result inside pop= ", answer_result)
+        modified_answers = []
         for key, answer in enumerate(answer_result):
             print(answer)
             item = {
@@ -144,10 +140,7 @@ def add_evaluation(json_data, file_upload):
     pdf_data = file_upload.read()
 
     with pdfplumber.open(io.BytesIO(pdf_data)) as pdf:
-        answer_pdf = ""
-        for page in pdf.pages:
-            answer_pdf += page.extract_text()
-            
+        answer_pdf = "".join(page.extract_text() for page in pdf.pages)
     with st.spinner("Uploading evaluation details..."):
         answer_core.create_answer(input=json_data, answer_pdf=pdf_data, filename=filename)
         st.success("answer added successfully.")

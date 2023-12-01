@@ -51,7 +51,7 @@ class GraderCohere:
         print("hello12345")
         if self.class_name is not None:
             for item in list_json:
-                
+
                 p1 = f""" 
                     ```
                     Question: 
@@ -110,20 +110,21 @@ class GraderCohere:
                     k=10,
                     stop_sequences=[],
                     return_likelihoods='NONE')
-            
+
                 resp = json.loads(response.generations[0].text)
                 graded.append(resp)
 
         grad_complete = []
         total_marks = 0
         for i in range(len(list_json)):
-            temp = {}
-            temp['no']=i+1
-            temp['question'] = list_json[i]['question']
-            temp['answer_key'] = list_json[i]['answer_key']
-            temp['student_answer'] = list_json[i]['student_answer']
-            temp['marks'] = graded[i]['Marks']
-            temp['justification'] = graded[i]['Justification']
+            temp = {
+                'no': i + 1,
+                'question': list_json[i]['question'],
+                'answer_key': list_json[i]['answer_key'],
+                'student_answer': list_json[i]['student_answer'],
+                'marks': graded[i]['Marks'],
+                'justification': graded[i]['Justification'],
+            }
             total_marks += float(graded[i]['Marks'])
 
             grad_complete.append(temp)

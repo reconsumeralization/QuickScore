@@ -12,27 +12,6 @@ def get_evaluation_details(_id):
     answer_result = answer_core.get_answer_by_id(_id)
     print(answer_result)
     return answer_result
-    
-    
-    
-    
-    
-
-    # The URL for the API endpoint
-    url = HOST_NAME + "/quick-score/answers/"+str(_id)
-
-    # Set the appropriate headers for JSON - this is important!
-    headers = {'Content-Type': 'application/json'}
-
-    # Send the POST request
-    response = requests.get(url, headers=headers)
-
-    # Check if the request was successful
-    if response.status_code == 200:
-        answer_result = response.json()
-        return answer_result
-    else:
-        exam_result = []
 
 def display_info(data):
     markdown_template = f"""
