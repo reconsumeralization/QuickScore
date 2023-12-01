@@ -1,7 +1,6 @@
 from typing import Dict, List, Tuple
-import datetime
 
-from backend.utils.errors import BadRequestError, InternalServerError, NotFoundError, AuthenticationError
+from backend.utils.errors import BadRequestError, InternalServerError
 from backend.dao.answer_dao import AnswerDao
 from backend.dao.exam_dao import ExamDao
 from backend.schemas.answer_schema import AnswerResponse, CreateAnswer, AnswerIndividualResponse
@@ -9,91 +8,99 @@ from backend.config.config import config
 from backend.rag_models.question_splitter import QuestionSplitter
 from backend.rag_models.grader import GraderCohere
 
-class AnswerCore:
 
+class AnswerCore:
     def __init__(self):
         self.answer_dao = AnswerDao()
         self.exam_dao = ExamDao()
 
-    def create_answer(self, input: CreateAnswer, answer_pdf: str, filename: str) -> Dict:
+    def create_answer(self, create_answer: CreateAnswer, answer_pdf: str, filename: str) -> Dict:
         """
-        Create an answer and store it in the database.
+        Create an answer based on the provided details.
 
         Args:
-            input (CreateAnswer): The input data for creating the answer.
-            answer_pdf (str): The PDF content of the answer.
+            create_answer (CreateAnswer): The details of the answer to be created.
+            answer_pdf (str): The PDF containing the answers.
             filename (str): The name of the file.
 
         Returns:
-            Dict: The created answer in JSON format.
+            Dict: The created answer response.
         """
-        exam_details, context_key = self._get_exam_details(input.exam_id)
-        json_answer_pdf = self._parse_answer_pdf(answer_pdf)
-        sorted_student_answer = sorted(json_answer_pdf, key=lambda x: x['no'])
-        json_answer_list = self._merge_student_and_answer_key(sorted_student_answer, exam_details["answer_key"])
-        evaluation_result, total_score = self._grade_answer(context_key, json_answer_list)
+        exam_details, context_key = self.get_exam_details(create_answer.exam_id)
+        json_answer_list = self.process_answer_pdf(answer_pdf, exam_details["answer_key"])
+        evaluation_result, total_score = self.grade_answer(context_key, json_answer_list)
 
-        # Calculate the score and confidence
-        score = total_score
-        confidence = 0.0
-
-        # Insert the result
         answer_result = self.answer_dao.create_answer(
-            exam_id=input.exam_id,
-            student_id=input.student_id,
-            score=score,
-            confidence=confidence,
+            exam_id=create_answer.exam_id,
+            student_id=create_answer.student_id,
+            score=total_score,
+            confidence=0.0,
             evaluation_details=evaluation_result,
             filename=filename
         )
-        answer, student = self._extract_answer_and_student(answer_result)
-        return self._create_answer_response(answer, student)
+        answer, student = self.extract_answer_and_student(answer_result)
+        return self.create_answer_response(answer, student)
 
-    def get_answer_by_id(self, id: int) -> Dict:
+    def process_answer_pdf(self, answer_pdf: str, answer_key: List[Dict]) -> List[Dict]:
         """
-        Retrieve an answer by its ID.
+        Process the answer PDF to extract relevant information.
 
         Args:
-            id (int): The ID of the answer.
+            answer_pdf (str): The PDF containing the answers.
+            answer_key (List[Dict]): The answer key.
 
         Returns:
-            Dict: The retrieved answer in JSON format.
+            List[Dict]: Processed information from the answer PDF.
         """
-        answer_result = self.answer_dao.get_answer_by_id(id)
-        answer, student = self._extract_answer_and_student(answer_result)
-        exam = self.exam_dao.get_exam_by_id(answer["exam_id"])[0].__dict__
-        return self._create_individual_answer_response(answer, student, exam)
+        if not answer_pdf:
+            raise BadRequestError("Could not parse the PDF")
+
+        qs = QuestionSplitter()
+        sorted_student_answer = sorted(qs.splitter(answer_pdf), key=lambda x: x['no'])
+        return self.merge_student_and_answer_key(sorted_student_answer, answer_key)
+
+    def get_answer_by_id(self, answer_id: int) -> Dict:
+        """
+        Retrieve an answer based on its ID.
+
+        Args:
+            answer_id (int): The ID of the answer.
+
+        Returns:
+            Dict: The individual answer response.
+        """
+        answer, student, exam = self.get_individual_answer_details(answer_id)
+        return self.create_individual_answer_response(answer, student, exam)
 
     def get_answers_by_exam_id(self, exam_id: int) -> List[Dict]:
         """
-        Retrieve all answers for a given exam ID.
+        Retrieve answers for a specific exam.
 
         Args:
             exam_id (int): The ID of the exam.
 
         Returns:
-            List[Dict]: List of answers in JSON format.
+            List[Dict]: The list of answer responses.
         """
         answers = self.answer_dao.get_answers_by_exam_id(exam_id)
-        new_answers = [self._create_answer_response(*self._extract_answer_and_student(answer_result)) for answer_result in answers]
-        return [AnswerResponse.model_validate(answer).model_dump(mode="json") for answer in new_answers]
+        return [self.create_answer_response(*self.extract_answer_and_student(answer_result)) for answer_result in answers]
 
-    def delete_answer(self, id: int) -> bool:
+    def delete_answer(self, answer_id: int) -> bool:
         """
-        Delete an answer by its ID.
+        Delete an answer based on its ID.
 
         Args:
-            id (int): The ID of the answer to be deleted.
+            answer_id (int): The ID of the answer.
 
         Returns:
-            bool: True if deletion is successful, False otherwise.
+            bool: True if deletion is successful.
         """
-        self.answer_dao.delete_answer(id)
+        self.answer_dao.delete_answer(answer_id)
         return True
 
-    def _get_exam_details(self, exam_id: int) -> Tuple[Dict, str]:
+    def get_exam_details(self, exam_id: int) -> Tuple[Dict, str]:
         """
-        Get exam details and context key by exam ID.
+        Retrieve details of an exam.
 
         Args:
             exam_id (int): The ID of the exam.
@@ -102,86 +109,79 @@ class AnswerCore:
             Tuple[Dict, str]: Exam details and context key.
         """
         exam_context_details = self.exam_dao.get_exam_by_id(exam_id)
-        if exam_context_details[0] is not None:
-            exam_details = exam_context_details[0].__dict__
-        else:
-            raise InternalServerError("Provided Exam Details not Present")
+        exam_details = exam_context_details[0].__dict__ if exam_context_details[0] else {}
+        context_key = exam_context_details[1].__dict__["context_key"] if exam_context_details[1] else None
 
-        context_key = exam_context_details[1].__dict__["context_key"] if exam_context_details[1] is not None else None
+        if not exam_details:
+            raise InternalServerError("Provided Exam Details not Present")
 
         return exam_details, context_key
 
-    def _parse_answer_pdf(self, answer_pdf: str) -> Dict:
+    def merge_student_and_answer_key(self, sorted_student_answer: List[Dict], json_answer_key: List[Dict]) -> List[Dict]:
         """
-        Parse the answer PDF using QuestionSplitter.
+        Merge student answers with the answer key.
 
         Args:
-            answer_pdf (str): The PDF content of the answer.
-
-        Returns:
-            Dict: The parsed answer in JSON format.
-        """
-        if not answer_pdf:
-            raise BadRequestError("Could not parse the PDF")
-        qs = QuestionSplitter()
-        return qs.splitter(answer_pdf)
-
-    def _merge_student_and_answer_key(self, sorted_student_answer: List[Dict], json_answer_key: List[Dict]) -> List[Dict]:
-        """
-        Merge student answers and answer key.
-
-        Args:
-            sorted_student_answer (List[Dict]): Sorted student answers.
+            sorted_student_answer (List[Dict]): Sorted list of student answers.
             json_answer_key (List[Dict]): Answer key.
 
         Returns:
-            List[Dict]: Merged list of dictionaries.
+            List[Dict]: Merged list of student answers and answer key.
         """
         json_answer_list = []
         j, k = 0, 0
+
         while j < len(sorted_student_answer) or k < len(json_answer_key):
             temp = {}
-            if j < len(sorted_student_answer) and k < len(json_answer_key) and sorted_student_answer[j]["no"] == json_answer_key[k]["no"]:
+
+            if (
+                j < len(sorted_student_answer)
+                and k < len(json_answer_key)
+                and sorted_student_answer[j]["no"] == json_answer_key[k]["no"]
+            ):
                 temp["question"] = json_answer_key[k]["question"]
                 temp["student_answer"] = sorted_student_answer[j]["answer"]
                 temp["answer_key"] = json_answer_key[k]["answer"]
                 j += 1
                 k += 1
-            elif k < len(json_answer_key) and (j == len(sorted_student_answer) or sorted_student_answer[j]["no"] > json_answer_key[k]["no"]):
+            elif k < len(json_answer_key) and (
+                j == len(sorted_student_answer) or sorted_student_answer[j]["no"] > json_answer_key[k]["no"]
+            ):
                 temp["question"] = json_answer_key[k]["question"]
                 temp["student_answer"] = ""
                 temp["answer_key"] = json_answer_key[k]["answer"]
                 k += 1
             else:
                 raise InternalServerError("Error in Answer key")
+
             json_answer_list.append(temp)
 
         return json_answer_list
 
-    def _grade_answer(self, context_key: str, json_answer_list: List[Dict]) -> Tuple[List[Dict], float]:
+    def grade_answer(self, context_key: str, json_answer_list: List[Dict]) -> Tuple[List[Dict], float]:
         """
-        Grade the answer using GraderCohere.
+        Grade answers using the provided context key.
 
         Args:
-            context_key (str): Context key.
-            json_answer_list (List[Dict]): List of merged student answers and answer key.
+            context_key (str): The context key.
+            json_answer_list (List[Dict]): List of student answers.
 
         Returns:
-            Tuple[List[Dict], float]: Evaluation result and total score.
+            Tuple[List[Dict], float]: Evaluation details and total score.
         """
         cohere_grader = GraderCohere(context_key)
         return cohere_grader.grade(json_answer_list)
 
-    def _create_answer_response(self, answer: Dict, student: Dict) -> Dict:
+    def create_answer_response(self, answer: Dict, student: Dict) -> Dict:
         """
-        Create an answer response.
+        Create a response for an answer.
 
         Args:
             answer (Dict): Answer details.
             student (Dict): Student details.
 
         Returns:
-            Dict: Answer response in JSON format.
+            Dict: Answer response.
         """
         result = {
             "id": answer["id"],
@@ -193,9 +193,24 @@ class AnswerCore:
         }
         return result
 
-    def _create_individual_answer_response(self, answer: Dict, student: Dict, exam: Dict) -> Dict:
+    def get_individual_answer_details(self, answer_id: int) -> Tuple[Dict, Dict, Dict]:
         """
-        Create an individual answer response.
+        Retrieve details of an individual answer.
+
+        Args:
+            answer_id (int): The ID of the answer.
+
+        Returns:
+            Tuple[Dict, Dict, Dict]: Answer, student, and exam details.
+        """
+        answer_result = self.answer_dao.get_answer_by_id(answer_id)
+        answer, student = self.extract_answer_and_student(answer_result)
+        exam = self.exam_dao.get_exam_by_id(answer["exam_id"])[0].__dict__
+        return answer, student, exam
+
+    def create_individual_answer_response(self, answer: Dict, student: Dict, exam: Dict) -> Dict:
+        """
+        Create a response for an individual answer.
 
         Args:
             answer (Dict): Answer details.
@@ -203,7 +218,7 @@ class AnswerCore:
             exam (Dict): Exam details.
 
         Returns:
-            Dict: Individual answer response in JSON format.
+            Dict: Individual answer response.
         """
         result = {
             "id": answer["id"],
@@ -217,16 +232,15 @@ class AnswerCore:
         }
         return result
 
-    def _extract_answer_and_student(self, input: Tuple) -> Tuple[Dict, Dict]:
+    def extract_answer_and_student(self, input: Tuple) -> Tuple[Dict, Dict]:
         """
-        Extract answer and student details.
+        Extract answer and student details from input tuple.
 
         Args:
-            input (Tuple): Input data.
+            input (Tuple): Tuple containing student and answer details.
 
         Returns:
-            Tuple[Dict, Dict]: Answer and student details.
+            Tuple[Dict, Dict]: Extracted answer and student details.
         """
-        student = input[0].__dict__
-        answer = input[1].__dict__
+        student, answer = input[0].__dict__, input[1].__dict__
         return answer, student
