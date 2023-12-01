@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     class Config:
         """
         Configuration for Pydantic model.
+        This class is used to specify the location of the environment file.
         """
         env_file = "./backend/.env"
 
