@@ -4,7 +4,7 @@ from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.ext.declarative import declarative_base
 
 from backend.config.config import config
-from backend.utils.errors import databaseError
+from backend.utils.errors import DatabaseError
 
 Base = declarative_base()
 
