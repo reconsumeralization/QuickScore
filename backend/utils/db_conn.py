@@ -1,10 +1,4 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy_utils import database_exists, create_database
-from sqlalchemy.ext.declarative import declarative_base
-
-from backend.config.config import config
-from backend.utils.errors import DatabaseError
+from backend.config.config import config  # Correct import name
 
 Base = declarative_base()
 
@@ -15,7 +9,7 @@ class Database:
     """
 
     _instance = None
-    _db_url = Config.DATABASE_URL
+    _db_url = config.DATABASE_URL  # Correct reference to the config object
     _session_local = None
     _engine = None
 
