@@ -21,6 +21,6 @@ class Settings(BaseSettings):
         """
         Internal class for configuring the behaviour of Settings.
         """
-        env_file = "./backend/.env"  # Adjust the path based on your project structure
+        env_file = "./backend/.env"
 
-config: Settings = Settings()
+config = Settings()
