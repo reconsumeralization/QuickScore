@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     WEAVIATE_API_KEY: Optional[str] = None
     WEAVIATE_URL: Optional[str] = None
     
-    model_config = SettingsConfigDict(env_file="./backend/.env")
+    model_config: SettingsConfigDict = SettingsConfigDict(env_file="./backend/.env")
 
 
 config = Settings()
