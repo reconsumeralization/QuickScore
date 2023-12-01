@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import exc
 
-from backend.utils.db_conn import conn  
+from backend.utils.db_conn import conn
 from backend.utils.errors import DatabaseError, DuplicateError, NotFoundError
 from backend.models.models import StudentModel, AnswerModel
 
