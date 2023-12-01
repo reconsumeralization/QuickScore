@@ -1,54 +1,77 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils import database_exists, create_database
 
-from backend.config.config import config
-from backend.utils.errors import InternalServerError, DatabaseError
+from backend.config.config import Config
+from backend.utils.errors import DatabaseError
 
 Base = declarative_base()
 
-class DBConn:
-
+class Database:
+    """
+    A singleton class that provides a connection to a database using SQLAlchemy.
+    """
     _instance = None
-    __db_url: str
-    session_local: sessionmaker
-    engine = None
+    _db_url = Config.DATABASE_URL
+    _session_local = None
+    _engine = None
 
-    def __init__(self,):
-        self.__db_url = "sqlite:///mydatabase.db"
-        
+    def __new__(cls):
+        """
+        Overrides __new__ method to implement singleton pattern
+        """
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        """
+        Initializes a Database object with a database URL
+        """
+
     def setup_server(self):
-        engine = create_engine(self.__db_url, connect_args={}, future=True)
-        self.engine = engine
-        self.session_local = sessionmaker(autocommit=False, autoflush=False, bind=engine, future=True)
-        self.__create_db_if_not_exists()
-        self.__create_all(engine)
+        """
+        Sets up the database connection and creates the database if it does not exist.
+        """
+        self._engine = create_engine(self._db_url, future=True)
+        self._session_local = sessionmaker(autocommit=False, autoflush=False, bind=self._engine, future=True)
+        self._create_db_if_not_exists()
+        self._create_all()
 
-    def __create_db_if_not_exists(self):
-        try:
-            if not database_exists(self.__db_url):
-                create_database(self.__db_url)
-                print("Database Created Successfully!!")
-        except Exception as error:
-            raise InternalServerError("There has been a problem in checking the connection for the db.") from error
+    @staticmethod
+    def _create_db_if_not_exists(engine, url):
+        """
+        Creates the database if it does not exist.
+        """
+        if not database_exists(url):
+            create_database(url)
 
-    def __create_all(self, engine):
-        Base.metadata.create_all(bind=engine)
+    def _create_all(self):
+        """
+        Creates all the tables in the database.
+        """
+        Base.metadata.create_all(bind=self._engine)
 
     def get_db_url(self):
-        return self.__db_url
+        """
+        Returns the database URL.
+        """
+        return self._db_url
 
     def get_db(self):
+        """
+        Returns a new database session.
+        """
         try:
-            db = self.session_local()
+            db = self._session_local()
             return db
         except Exception as error:
             raise DatabaseError("Error while connecting to database!!") from error
 
     def close_all_connections(self):
-        if self.engine is not None:
-            self.engine.dispose()
-
-conn = DBConn()
-conn.setup_server()
+        """
+        Closes all the connections to the database.
+        """
+        if self._engine is not None:
+            self._engine.dispose()
