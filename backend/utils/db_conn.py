@@ -61,7 +61,9 @@ class Database:
             db = self._session_local()
             return db
         except Exception as error:
-            raise DatabaseError("Error while connecting to the database") from error
+            
+        Creates the database if it does not exist.
+        Creates the database if it does not exist.raise DatabaseError("Error while connecting to the database") from error
 
     def close_all_connections(self):
         """
