@@ -11,29 +11,59 @@ class StudentCore:
     def __init__(self):
         self.student_dao = StudentDao()
 
-    # Create a new student
     def create_student(self, input: CreateStudent):
-        student = self.student_dao.create_student(name= input["name"], roll_no= input["roll_no"], email= input["email"], user_id=input["user_id"])
-        student = StudentResponse.model_validate(student).model_dump(mode="json")
-        return student
+        """
+        Create a new student.
 
-    # Retrieve a student by id
-    def get_student_by_id(self, id: int):
-        student = self.student_dao.get_student_by_id(id)
-        student = StudentResponse.model_validate(student).model_dump(mode="json")
-        return student
+        Parameters:
+        - input (CreateStudent): Student details.
 
-    # Retrieve a student by user_id
+        Returns:
+        - dict: Created student details.
+        """
+        student = self.student_dao.create_student(
+            name=input["name"],
+            roll_no=input["roll_no"],
+            email=input["email"],
+            user_id=input["user_id"]
+        )
+        return StudentResponse.model_validate(student).model_dump(mode="json")
+
+    def get_student_by_id(self, student_id: int):
+        """
+        Retrieve a student by ID.
+
+        Parameters:
+        - student_id (int): Student ID.
+
+        Returns:
+        - dict: Student details.
+        """
+        student = self.student_dao.get_student_by_id(student_id)
+        return StudentResponse.model_validate(student).model_dump(mode="json")
+
     def get_students_by_user_id(self, user_id: int):
-        students = self.student_dao.get_students_by_user_id(user_id)
-        new_students = []
-        for student in students:
-            tmp = StudentResponse.model_validate(student).model_dump(mode="json")
-            new_students.append(tmp)
-        return new_students
+        """
+        Retrieve students by user ID.
 
-    # Delete a student
-    def delete_student(self, id: int):
-        print("hello")
-        self.student_dao.delete_student(id)
+        Parameters:
+        - user_id (int): User ID.
+
+        Returns:
+        - list: List of student details.
+        """
+        students = self.student_dao.get_students_by_user_id(user_id)
+        return [StudentResponse.model_validate(student).model_dump(mode="json") for student in students]
+
+    def delete_student(self, student_id: int):
+        """
+        Delete a student.
+
+        Parameters:
+        - student_id (int): Student ID.
+
+        Returns:
+        - bool: True if deletion is successful.
+        """
+        self.student_dao.delete_student(student_id)
         return True
