@@ -1,20 +1,26 @@
 from typing import Optional
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
+from pydantic import BaseSettings
 
 class Settings(BaseSettings):
-    DB_HOST: Optional[str] = None
-    DB_PORT: Optional[str] = None
-    DB_USERNAME: Optional[str] = None
-    DB_PASSWORD: Optional[str] = None
-    DB_DATABASE: Optional[str] = None
+    """
+    A class to manage all the settings for the application.
+    Uses pydantic BaseSettings for validation and serialization.
+    """
+    DB_HOST: Optional[str]
+    DB_PORT: Optional[str]
+    DB_USERNAME: Optional[str]
+    DB_PASSWORD: Optional[str]
+    DB_DATABASE: Optional[str]
 
-    SECRET_KEY: Optional[str] = None
-    COHERE_API_KEY: Optional[str] = None
-    WEAVIATE_API_KEY: Optional[str] = None
-    WEAVIATE_URL: Optional[str] = None
-    
-    model_config = SettingsConfigDict(env_file="./backend/.env")
+    SECRET_KEY: Optional[str]
+    COHERE_API_KEY: Optional[str]
+    WEAVIATE_API_KEY: Optional[str]
+    WEAVIATE_URL: Optional[str]
 
+    class Config:
+        """
+        Internal class for configuring the behaviour of Settings.
+        """
+        env_file = "./backend/.env"  # Adjust the path based on your project structure
 
-config = Settings()
+config: Settings = Settings()
