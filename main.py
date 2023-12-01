@@ -1,5 +1,10 @@
-import streamlit as st
-from frontend import redirect as rd, students, exams, evaluations, references, individual, login
+from frontend import redirect as rd
+from frontend import students
+from frontend import exams
+from frontend import evaluations
+from frontend import references
+from frontend import individual
+from frontend import login
 
 # Page configuration
 st.set_page_config(page_title="GradeMe", layout="wide")
