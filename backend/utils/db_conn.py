@@ -1,17 +1,19 @@
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils import database_exists, create_database
+from sqlalchemy.ext.declarative import declarative_base
 
 from backend.config.config import Config
 from backend.utils.errors import DatabaseError
 
 Base = declarative_base()
 
+
 class Database:
     """
     A singleton class that provides a connection to a database using SQLAlchemy.
     """
+
     _instance = None
     _db_url = Config.DATABASE_URL
     _session_local = None
@@ -19,7 +21,7 @@ class Database:
 
     def __new__(cls):
         """
-        Overrides __new__ method to implement singleton pattern
+        Overrides __new__ method to implement the singleton pattern.
         """
         if cls._instance is None:
             cls._instance = super().__new__(cls)
@@ -27,7 +29,7 @@ class Database:
 
     def __init__(self):
         """
-        Initializes a Database object with a database URL
+        Initializes a Database object with a database URL.
         """
 
     def setup_server(self):
@@ -37,17 +39,15 @@ class Database:
         self._engine = create_engine(self._db_url, future=True)
         self._session_local = sessionmaker(autocommit=False, autoflush=False, bind=self._engine, future=True)
         self._create_db_if_not_exists()
-        self._create_all()
 
-    @staticmethod
-    def _create_db_if_not_exists(engine, url):
+    def _create_db_if_not_exists(self):
         """
         Creates the database if it does not exist.
         """
-        if not database_exists(url):
-            create_database(url)
+        if not database_exists(self._db_url):
+            create_database(self._db_url)
 
-    def _create_all(self):
+    def create_all_tables(self):
         """
         Creates all the tables in the database.
         """
@@ -67,7 +67,7 @@ class Database:
             db = self._session_local()
             return db
         except Exception as error:
-            raise DatabaseError("Error while connecting to database!!") from error
+            raise DatabaseError("Error while connecting to the database") from error
 
     def close_all_connections(self):
         """
