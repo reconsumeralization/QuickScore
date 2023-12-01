@@ -90,6 +90,7 @@ def populate_students_table():
             modified_students.append(item)
         st.session_state.student_details = modified_students
 
+
 def delete_student(student_id):
     try:
         student_core = StudentCore()
