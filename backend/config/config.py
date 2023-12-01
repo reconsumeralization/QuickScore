@@ -1,10 +1,13 @@
 from typing import Optional
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
+    """
+    Pydantic model for environment configuration.
+    """
     DB_HOST: Optional[str] = None
-    DB_PORT: Optional[str] = None
+    DB_PORT: Optional[int] = None
     DB_USERNAME: Optional[str] = None
     DB_PASSWORD: Optional[str] = None
     DB_DATABASE: Optional[str] = None
@@ -13,8 +16,12 @@ class Settings(BaseSettings):
     COHERE_API_KEY: Optional[str] = None
     WEAVIATE_API_KEY: Optional[str] = None
     WEAVIATE_URL: Optional[str] = None
-    
-    model_config: SettingsConfigDict = SettingsConfigDict(env_file="./backend/.env")
+
+    class Config:
+        """
+        Configuration for Pydantic model.
+        """
+        env_file = "./backend/.env"
 
 
 config = Settings()
